@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOLLYWOOD — Daily Puzzle</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0C0A0E;
+  --surface: #16121A;
+  --border: #2E2535;
+  --gold: #F5C518;
+  --gold-dim: #7A620C;
+  --red: #C0392B;
+  --green: #27AE60;
+  --text: #EDE0CC;
+  --muted: #6B5B73;
+  --struck: #3A1F1F;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 40px;
+  background-image: radial-gradient(ellipse at 50% 0%, #1E0A2E 0%, transparent 65%);
+}
+
+.header { text-align: center; padding: 22px 20px 10px; width: 100%; }
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 8vw, 3.8rem); font-weight: 900;
+  background: linear-gradient(160deg, #FFE566 0%, #F5C518 40%, #B8860B 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  letter-spacing: 4px;
+}
+.header-sub { font-size: 0.78rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-top: 5px; }
+.header-date { font-size: 0.78rem; color: var(--gold-dim); letter-spacing: 2px; margin-top: 4px; }
+.header-rule { width: 100%; max-width: 560px; height: 1px; background: linear-gradient(90deg,transparent,var(--gold),transparent); margin: 12px auto 0; }
+
+/* LOADING */
+.loading-screen {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; margin-top: 80px; gap: 16px;
+}
+.spinner {
+  width: 44px; height: 44px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; }
+
+/* ERROR */
+.error-screen {
+  display: none; flex-direction: column; align-items: center;
+  justify-content: center; margin-top: 60px; gap: 12px;
+  max-width: 400px; text-align: center; padding: 0 20px;
+}
+.error-screen.show { display: flex; }
+.error-screen .error-icon { font-size: 2.5rem; }
+.error-screen h3 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.3rem; }
+.error-screen p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+
+/* GAME (hidden until loaded) */
+.game-wrap { display: none; width: 100%; flex-direction: column; align-items: center; }
+.game-wrap.show { display: flex; }
+
+/* SCOREBOARD */
+.scoreboard-wrap { margin: 18px 20px 0; width: 100%; max-width: 560px; text-align: center; }
+.scoreboard-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+.scoreboard { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
+.score-letter {
+  width: 46px; height: 56px; border-radius: 8px;
+  border: 2px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 700;
+  color: var(--gold); position: relative; overflow: hidden;
+  transition: background 0.4s, border-color 0.4s, color 0.4s;
+}
+.score-letter.struck { background: var(--struck); border-color: #4A1F1F; color: #5A2828; }
+.score-letter.struck::after {
+  content: ''; position: absolute;
+  top: 50%; left: -10%; width: 120%; height: 3px;
+  background: var(--red); transform: translateY(-50%) rotate(-12deg);
+  border-radius: 2px; animation: strikeIn 0.35s ease forwards;
+}
+@keyframes strikeIn { from { width: 0; left: 50%; } to { width: 120%; left: -10%; } }
+.lives-info { margin-top: 8px; font-size: 0.78rem; color: var(--muted); letter-spacing: 1px; }
+.lives-info span { color: var(--gold); font-weight: 700; }
+
+/* BLANKS */
+.blank-section { margin: 22px 20px 0; max-width: 560px; width: 100%; text-align: center; }
+.blank-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+.puzzle-tag { font-size: 0.78rem; color: var(--gold-dim); letter-spacing: 2px; margin-bottom: 14px; }
+.words-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 12px 20px; }
+.word-block { display: flex; gap: 6px; align-items: flex-end; }
+.letter-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.letter-box {
+  width: 36px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700;
+  color: var(--gold); text-transform: uppercase;
+}
+.letter-box.just-revealed { animation: revealPop 0.4s ease; }
+@keyframes revealPop { 0%{transform:scale(0.4) translateY(10px);opacity:0} 65%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
+.letter-underline { width: 36px; height: 2px; background: var(--border); border-radius: 1px; }
+.word-slash { font-size: 2rem; color: var(--muted); padding-bottom: 8px; }
+
+/* GUESSED */
+.guessed-section { margin: 14px 20px 0; max-width: 560px; width: 100%; }
+.guessed-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+.guessed-letters { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; min-height: 28px; }
+.guessed-badge {
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 1rem; font-weight: 700;
+  font-family: 'Playfair Display', serif; text-transform: uppercase;
+  animation: badgePop 0.25s ease;
+}
+.guessed-badge.hit { background: rgba(39,174,96,0.12); border: 1px solid var(--green); color: var(--green); }
+.guessed-badge.miss { background: rgba(192,57,43,0.1); border: 1px solid #5A2828; color: #7A3A3A; text-decoration: line-through; }
+@keyframes badgePop { from{transform:scale(0.6);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* ALPHABET */
+.alphabet-section { margin: 18px 20px 0; max-width: 560px; width: 100%; }
+.alpha-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; text-align: center; }
+.alphabet-grid { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.alpha-btn {
+  width: 37px; height: 37px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+}
+.alpha-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.alpha-btn:disabled { cursor: not-allowed; }
+.alpha-btn.hit { border-color: var(--green); color: var(--green); background: rgba(39,174,96,0.08); opacity:0.65; }
+.alpha-btn.miss { border-color: #4A1F1F; color: #5A2828; background: var(--struck); opacity:0.55; }
+
+/* FEEDBACK */
+.feedback { max-width: 560px; width: 100%; padding: 0 20px; margin-top: 10px; text-align: center; min-height: 34px; }
+.feedback-msg { display: inline-block; padding: 6px 18px; border-radius: 8px; font-size: 0.9rem; }
+.feedback-msg.hit { background: rgba(39,174,96,0.12); color: var(--green); border: 1px solid var(--green); }
+.feedback-msg.miss { background: rgba(192,57,43,0.1); color: #E74C3C; border: 1px solid #E74C3C; }
+
+/* RESULT */
+.result-screen { display:none; margin: 22px 20px 0; max-width: 560px; width: 100%; }
+.result-screen.show { display: block; }
+.result-card { background: var(--surface); border: 1px solid var(--gold); border-radius: 16px; padding: 28px 24px; text-align: center; }
+.result-emoji { font-size: 3rem; display: block; margin-bottom: 10px; }
+.result-title { font-family: 'Playfair Display', serif; font-size: 1.9rem; color: var(--gold); margin-bottom: 8px; }
+.result-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 4px; }
+.result-movie { font-family: 'Playfair Display', serif; font-size: 1.5rem; letter-spacing: 3px; color: var(--text); margin: 14px 0 4px; text-transform: uppercase; }
+.result-year { color: var(--gold-dim); font-size: 0.85rem; letter-spacing: 2px; margin-bottom: 14px; }
+.result-about { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 0.88rem; color: var(--muted); line-height: 1.65; text-align: left; margin-bottom: 16px; }
+.result-about strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; }
+.result-score { display: inline-block; padding: 7px 22px; border-radius: 30px; background: rgba(245,197,24,0.08); border: 1px solid var(--gold-dim); font-size: 1rem; color: var(--gold); }
+.share-btn { display: block; margin: 14px 0 0; background: rgba(39,174,96,0.1); border: 1px solid var(--green); border-radius: 10px; padding: 12px 18px; font-size: 0.88rem; color: var(--green); cursor: pointer; letter-spacing: 1px; transition: background 0.2s; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; }
+.share-btn:hover { background: rgba(39,174,96,0.18); }
+.comeback { color: var(--muted); font-size: 0.78rem; margin-top: 14px; letter-spacing: 1px; }
+
+/* ALREADY PLAYED */
+.played-screen { display:none; margin: 30px 20px 0; max-width: 560px; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; text-align: center; }
+.played-screen.show { display: block; }
+.played-screen h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold); margin-bottom: 10px; }
+.played-screen p { color: var(--muted); font-size: 0.92rem; line-height: 1.6; }
+.countdown { font-size: 1.5rem; color: var(--text); margin: 16px 0; font-weight: 700; letter-spacing: 3px; }
+.prev-score { color: var(--gold); margin-top: 10px; font-size: 0.9rem; }
+
+/* NO MOVIE TODAY */
+.no-movie { display:none; margin: 40px 20px 0; max-width: 560px; width: 100%; background: var(--surface); border: 1px solid var(--gold-dim); border-radius: 16px; padding: 32px 24px; text-align: center; }
+.no-movie.show { display: block; }
+.no-movie h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); margin-bottom: 10px; }
+.no-movie p { color: var(--muted); font-size: 0.9rem; line-height: 1.65; }
+
+footer { margin-top: auto; padding-top: 30px; color: var(--muted); font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">BOLLYWOOD</div>
+  <div class="header-sub">Daily Movie Puzzle</div>
+  <div class="header-date" id="headerDate"></div>
+  <div class="header-rule"></div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading today's puzzle…</div>
+</div>
+
+<!-- ERROR -->
+<div class="error-screen" id="errorScreen">
+  <div class="error-icon">⚠️</div>
+  <h3>Couldn't load today's puzzle</h3>
+  <p>Please check your internet connection and refresh the page.</p>
+</div>
+
+<!-- NO MOVIE SCHEDULED -->
+<div class="no-movie" id="noMovieScreen">
+  <h2>🎬 No puzzle today!</h2>
+  <p>The curator hasn't scheduled a movie for today yet.<br>Check back soon — new puzzles drop regularly!</p>
+</div>
+
+<!-- ALREADY PLAYED -->
+<div class="played-screen" id="playedScreen">
+  <h2>🎬 Already Played Today!</h2>
+  <p>Come back tomorrow for the next puzzle.<br>New movie unlocks at midnight.</p>
+  <div class="countdown" id="countdown"></div>
+  <div class="prev-score" id="prevScore"></div>
+</div>
+
+<!-- MAIN GAME (shown after fetch) -->
+<div class="game-wrap" id="gameWrap">
+
+  <div class="scoreboard-wrap">
+    <div class="scoreboard-label">Wrong guess = one BOLLYWOOD letter struck · All 9 gone = Game Over</div>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="lives-info">Wrong guesses remaining: <span id="livesLeft">9</span></div>
+  </div>
+
+  <div class="blank-section">
+    <div class="blank-label">Guess The Movie — One Letter At A Time</div>
+    <div class="puzzle-tag" id="puzzleTag"></div>
+    <div class="words-row" id="wordsRow"></div>
+  </div>
+
+  <div class="guessed-section">
+    <div class="guessed-label">Letters Guessed</div>
+    <div class="guessed-letters" id="guessedLetters"></div>
+  </div>
+
+  <div class="alphabet-section">
+    <div class="alpha-label">Tap a letter · or use your keyboard</div>
+    <div class="alphabet-grid" id="alphabetGrid"></div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="result-screen" id="resultScreen">
+    <div class="result-card">
+      <span class="result-emoji" id="resultEmoji"></span>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-sub" id="resultSub"></div>
+      <div class="result-movie" id="resultMovie"></div>
+      <div class="result-year" id="resultYear"></div>
+      <div class="result-about" id="resultAbout"></div>
+      <div class="result-score" id="resultScore"></div>
+      <button class="share-btn" id="shareBtn">📋 Copy Result to Share</button>
+      <div class="comeback">🎬 New movie every day at midnight!</div>
+    </div>
+  </div>
+
+</div><!-- end game-wrap -->
+
+<footer>🎥 One movie · Every day at midnight · No hints</footer>
+
+<script>
+const API_URL   = 'https://script.google.com/macros/s/AKfycbwnNnjQvMBgk3-0Q8zgTqAF80t-MrGOz9IFibMtF7PsKzMo8dSJM8-uIGAiUEG5OZoVxw/exec';
+const BWOOD     = ['B','O','L','L','Y','W','O','O','D'];
+const EPOCH     = '2026-03-11'; // Day 1 launch date
+
+// ── date helpers ─────────────────────────────────────────────────
+function todayKey() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+function puzzleNumber(key) {
+  const diff = (new Date(key) - new Date(EPOCH)) / 86400000;
+  return Math.floor(diff) + 1;
+}
+function formatDisplay(key) {
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+const TODAY      = todayKey();
+const PUZZLE_NUM = puzzleNumber(TODAY);
+const STORE_KEY  = `bwd_v3_${TODAY}`;
+
+document.getElementById('headerDate').textContent = formatDisplay(TODAY);
+
+// ── already played? ───────────────────────────────────────────────
+function checkPlayed() {
+  const raw = localStorage.getItem(STORE_KEY);
+  if (!raw) return false;
+  const data = JSON.parse(raw);
+  hide('loadingScreen');
+  show('playedScreen');
+  document.getElementById('prevScore').textContent =
+    data.won ? `You solved it — Score: ${data.score}/9 🏆` : `Couldn't crack it today 😢`;
+  startCountdown();
+  return true;
+}
+
+function startCountdown() {
+  function tick() {
+    const now = new Date(), mid = new Date(); mid.setHours(24,0,0,0);
+    const d = mid - now;
+    const h = String(Math.floor(d/3600000)).padStart(2,'0');
+    const m = String(Math.floor((d%3600000)/60000)).padStart(2,'0');
+    const s = String(Math.floor((d%60000)/1000)).padStart(2,'0');
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = `${h} : ${m} : ${s}`;
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+// ── ui helpers ───────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.add('show'); }
+function hide(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('show');
+  el.style.display = 'none';
+}
+
+// ── fetch movie from Google Sheets ───────────────────────────────
+async function fetchMovie() {
+  if (checkPlayed()) return;
+
+  try {
+    const res  = await fetch(API_URL);
+    const data = await res.json();
+
+    hide('loadingScreen');
+
+    if (data.error) {
+      show('noMovieScreen');
+      return;
+    }
+
+    initGame(data);
+
+  } catch (e) {
+    hide('loadingScreen');
+    show('errorScreen');
+  }
+}
+
+// ── game ─────────────────────────────────────────────────────────
+let MOVIE, revealed, guessed, wrongCount, gameOver;
+
+function initGame(movieData) {
+  MOVIE      = movieData;
+  revealed   = [...MOVIE.name].map(ch => ch === ' ');
+  guessed    = {};
+  wrongCount = 0;
+  gameOver   = false;
+
+  document.getElementById('puzzleTag').textContent = `Puzzle #${PUZZLE_NUM}`;
+  document.getElementById('livesLeft').textContent = 9;
+
+  buildScoreboard();
+  buildAlphabet();
+  renderBlanks();
+
+  document.getElementById('gameWrap').classList.add('show');
+}
+
+function buildScoreboard() {
+  const sb = document.getElementById('scoreboard'); sb.innerHTML = '';
+  BWOOD.forEach((ch, i) => {
+    const el = document.createElement('div');
+    el.className = 'score-letter'; el.id = `sl-${i}`; el.textContent = ch;
+    sb.appendChild(el);
+  });
+}
+
+function buildAlphabet() {
+  const grid = document.getElementById('alphabetGrid'); grid.innerHTML = '';
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'alpha-btn'; btn.id = `ab-${ch}`; btn.textContent = ch;
+    btn.addEventListener('click', () => guess(ch));
+    grid.appendChild(btn);
+  });
+}
+
+function renderBlanks(newlyRevealed = []) {
+  const row = document.getElementById('wordsRow'); row.innerHTML = '';
+  const words = MOVIE.name.split(' '); let flat = 0;
+  words.forEach((word, wi) => {
+    const block = document.createElement('div'); block.className = 'word-block';
+    [...word].forEach((ch, ci) => {
+      const idx = flat + ci;
+      const cell = document.createElement('div'); cell.className = 'letter-cell';
+      const box  = document.createElement('div');
+      box.className = 'letter-box' + (newlyRevealed.includes(idx) ? ' just-revealed' : '');
+      box.textContent = revealed[idx] ? ch : '';
+      const ul = document.createElement('div'); ul.className = 'letter-underline';
+      cell.appendChild(box); cell.appendChild(ul); block.appendChild(cell);
+    });
+    row.appendChild(block);
+    flat += word.length + 1;
+    if (wi < words.length - 1) {
+      const sl = document.createElement('div'); sl.className = 'word-slash'; sl.textContent = '/';
+      row.appendChild(sl);
+    }
+  });
+}
+
+function guess(letter) {
+  letter = letter.toUpperCase();
+  if (gameOver || guessed[letter]) return;
+  guessed[letter] = true;
+
+  const isHit = MOVIE.name.replace(/ /g, '').includes(letter);
+  const newlyRevealed = [];
+  const btn = document.getElementById(`ab-${letter}`);
+
+  if (isHit) {
+    let flat = 0;
+    MOVIE.name.split(' ').forEach(word => {
+      [...word].forEach((ch, ci) => {
+        if (ch === letter) { revealed[flat + ci] = true; newlyRevealed.push(flat + ci); }
+      });
+      flat += word.length + 1;
+    });
+    if (btn) { btn.disabled = true; btn.classList.add('hit'); }
+    addBadge(letter, true);
+    showFeedback(`✓  "${letter}" is in the movie!`, 'hit');
+    renderBlanks(newlyRevealed);
+    if (checkWin()) { gameOver = true; setTimeout(() => showResult(true), 700); }
+  } else {
+    document.getElementById(`sl-${wrongCount}`)?.classList.add('struck');
+    wrongCount++;
+    document.getElementById('livesLeft').textContent = Math.max(0, 9 - wrongCount);
+    if (btn) { btn.disabled = true; btn.classList.add('miss'); }
+    addBadge(letter, false);
+    showFeedback(`✗  "${letter}" is not in the movie.`, 'miss');
+    renderBlanks();
+    if (wrongCount >= 9) { gameOver = true; setTimeout(() => showResult(false), 500); }
+  }
+}
+
+function addBadge(letter, hit) {
+  const badge = document.createElement('div');
+  badge.className = `guessed-badge ${hit ? 'hit' : 'miss'}`;
+  badge.textContent = letter;
+  document.getElementById('guessedLetters').appendChild(badge);
+}
+
+function checkWin() {
+  return [...MOVIE.name].every((ch, i) => ch === ' ' || revealed[i]);
+}
+
+function showFeedback(msg, type) {
+  document.getElementById('feedback').innerHTML = `<span class="feedback-msg ${type}">${msg}</span>`;
+}
+
+function showResult(won) {
+  const score = 9 - wrongCount;
+  localStorage.setItem(STORE_KEY, JSON.stringify({ won, score }));
+
+  const bwEmoji   = BWOOD.map((_, i) => i < wrongCount ? '🟥' : '🟨').join('');
+  const shareText = [
+    `#${PUZZLE_NUM}  ${won ? `🏆 Solved! Score: ${score}/9` : `💀 Couldn't crack it`}`,
+    ``,
+    bwEmoji,
+    `Letters tried: ${Object.keys(guessed).length}`,
+  ].join('\n');
+
+  document.getElementById('resultEmoji').textContent = won ? '🏆' : '💀';
+  document.getElementById('resultTitle').textContent = won ? 'Sahi Jawab!' : 'Afsoos!';
+  document.getElementById('resultSub').textContent   = won
+    ? `Cracked in ${Object.keys(guessed).length} guesses with ${score} letter${score===1?'':'s'} left!`
+    : `BOLLYWOOD struck out. Today's movie was:`;
+  document.getElementById('resultMovie').textContent = MOVIE.name;
+  document.getElementById('resultYear').textContent  = MOVIE.year;
+  document.getElementById('resultAbout').innerHTML   = `<strong>About the Movie</strong>${MOVIE.about}`;
+  document.getElementById('resultScore').textContent = `Score: ${score} / 9`;
+  document.getElementById('resultScreen').classList.add('show');
+
+  document.getElementById('shareBtn').onclick = () => {
+    navigator.clipboard.writeText(shareText).then(() => {
+      document.getElementById('shareBtn').textContent = '✅ Copied! Share with friends';
+    });
+  };
+}
+
+// ── keyboard ─────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (gameOver) return;
+  if (e.key.match(/^[a-zA-Z]$/) && !e.ctrlKey && !e.metaKey && !e.altKey) guess(e.key.toUpperCase());
+});
+
+// ── start ────────────────────────────────────────────────────────
+fetchMovie();
+</script>
+</body>
+</html>
