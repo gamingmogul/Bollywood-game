@@ -167,12 +167,17 @@ body {
 .comeback { color: var(--muted); font-size: 0.78rem; margin-top: 14px; letter-spacing: 1px; }
 
 /* ALREADY PLAYED */
-.played-screen { display:none; margin: 30px 20px 0; max-width: 560px; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; text-align: center; }
+.played-screen { display:none; margin: 30px 20px 0; max-width: 560px; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; text-align: center; }
 .played-screen.show { display: block; }
-.played-screen h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold); margin-bottom: 10px; }
-.played-screen p { color: var(--muted); font-size: 0.92rem; line-height: 1.6; }
-.countdown { font-size: 1.5rem; color: var(--text); margin: 16px 0; font-weight: 700; letter-spacing: 3px; }
-.prev-score { color: var(--gold); margin-top: 10px; font-size: 0.9rem; }
+.played-screen h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold); margin-bottom: 12px; }
+.played-screen p { color: var(--muted); font-size: 0.88rem; letter-spacing: 1px; }
+.prev-score { font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 14px; letter-spacing: 1px; }
+.prev-movie { font-family: 'Playfair Display', serif; font-size: 1.5rem; letter-spacing: 3px; color: var(--text); margin-bottom: 4px; text-transform: uppercase; }
+.prev-year { color: var(--gold-dim); font-size: 0.85rem; letter-spacing: 2px; margin-bottom: 14px; }
+.prev-about { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 0.88rem; color: var(--muted); line-height: 1.65; text-align: left; margin-bottom: 18px; }
+.prev-about strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; }
+.played-divider { width: 80px; height: 1px; background: linear-gradient(90deg,transparent,var(--border),transparent); margin: 0 auto 16px; }
+.countdown { font-size: 1.5rem; color: var(--text); margin-top: 10px; font-weight: 700; letter-spacing: 3px; }
 
 /* NO MOVIE TODAY */
 .no-movie { display:none; margin: 40px 20px 0; max-width: 560px; width: 100%; background: var(--surface); border: 1px solid var(--gold-dim); border-radius: 16px; padding: 32px 24px; text-align: center; }
@@ -214,9 +219,13 @@ footer { margin-top: auto; padding-top: 30px; color: var(--muted); font-size: 0.
 <!-- ALREADY PLAYED -->
 <div class="played-screen" id="playedScreen">
   <h2>🎬 Already Played Today!</h2>
-  <p>Come back tomorrow for the next puzzle.<br>New movie unlocks at midnight.</p>
-  <div class="countdown" id="countdown"></div>
   <div class="prev-score" id="prevScore"></div>
+  <div class="prev-movie" id="prevMovie"></div>
+  <div class="prev-year" id="prevYear"></div>
+  <div class="prev-about" id="prevAbout"></div>
+  <div class="played-divider"></div>
+  <p>New movie unlocks at midnight</p>
+  <div class="countdown" id="countdown"></div>
 </div>
 
 <!-- MAIN GAME (shown after fetch) -->
@@ -290,14 +299,27 @@ const STORE_KEY  = `bwd_v3_${TODAY}`;
 document.getElementById('headerDate').textContent = formatDisplay(TODAY);
 
 // ── already played? ───────────────────────────────────────────────
-function checkPlayed() {
+function checkPlayed(movieData) {
   const raw = localStorage.getItem(STORE_KEY);
   if (!raw) return false;
   const data = JSON.parse(raw);
+
   hide('loadingScreen');
   show('playedScreen');
+
+  // Score
   document.getElementById('prevScore').textContent =
-    data.won ? `You solved it — Score: ${data.score}/9 🏆` : `Couldn't crack it today 😢`;
+    data.won ? `🏆 Solved! Score: ${data.score}/9` : `💀 Couldn't crack it`;
+
+  // Movie name + year + trivia — from fresh fetch OR saved in localStorage
+  const movie = movieData || data.movie || null;
+  if (movie) {
+    document.getElementById('prevMovie').textContent = movie.name;
+    document.getElementById('prevYear').textContent  = movie.year;
+    document.getElementById('prevAbout').innerHTML   =
+      `<strong>Did You Know?</strong>${movie.about}`;
+  }
+
   startCountdown();
   return true;
 }
@@ -325,8 +347,6 @@ function hide(id) {
 
 // ── fetch movie from Google Sheets ───────────────────────────────
 async function fetchMovie() {
-  if (checkPlayed()) return;
-
   try {
     const res  = await fetch(API_URL);
     const data = await res.json();
@@ -334,15 +354,20 @@ async function fetchMovie() {
     hide('loadingScreen');
 
     if (data.error) {
-      show('noMovieScreen');
+      // Already played? Show saved data. Otherwise show no-movie screen.
+      if (!checkPlayed(null)) show('noMovieScreen');
       return;
     }
+
+    // Already played today? Show result screen with fresh trivia
+    if (checkPlayed(data)) return;
 
     initGame(data);
 
   } catch (e) {
     hide('loadingScreen');
-    show('errorScreen');
+    // Try showing stored result even if fetch fails
+    if (!checkPlayed(null)) show('errorScreen');
   }
 }
 
@@ -459,7 +484,8 @@ function showFeedback(msg, type) {
 
 function showResult(won) {
   const score = 9 - wrongCount;
-  localStorage.setItem(STORE_KEY, JSON.stringify({ won, score }));
+  // Save result + full movie data so returning players see trivia
+  localStorage.setItem(STORE_KEY, JSON.stringify({ won, score, movie: MOVIE }));
 
   const bwEmoji   = BWOOD.map((_, i) => i < wrongCount ? '🟥' : '🟨').join('');
   const shareText = [
@@ -476,9 +502,14 @@ function showResult(won) {
     : `BOLLYWOOD struck out. Today's movie was:`;
   document.getElementById('resultMovie').textContent = MOVIE.name;
   document.getElementById('resultYear').textContent  = MOVIE.year;
-  document.getElementById('resultAbout').innerHTML   = `<strong>About the Movie</strong>${MOVIE.about}`;
+  document.getElementById('resultAbout').innerHTML   = `<strong>Did You Know?</strong>${MOVIE.about}`;
   document.getElementById('resultScore').textContent = `Score: ${score} / 9`;
   document.getElementById('resultScreen').classList.add('show');
+
+  // Auto-scroll to result
+  setTimeout(() => {
+    document.getElementById('resultScreen').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 400);
 
   document.getElementById('shareBtn').onclick = () => {
     navigator.clipboard.writeText(shareText).then(() => {
