@@ -82,8 +82,8 @@ body {
 
 /* SCOREBOARD */
 .scoreboard-wrap { margin: 18px 20px 0; width: 100%; max-width: 560px; text-align: center; }
-.scoreboard-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
-.scoreboard { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
+.scoreboard-label { font-size: 0.72rem; letter-spacing: 2px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 10px; }
+.scoreboard { display: flex; justify-content: center; gap: 5px; flex-wrap: nowrap; }
 .score-letter {
   width: 46px; height: 56px; border-radius: 8px;
   border: 2px solid var(--border-light); background: var(--surface2);
@@ -93,6 +93,10 @@ body {
   transition: background 0.4s, border-color 0.4s, color 0.4s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
+@media (max-width: 420px) {
+  .score-letter { width: 34px; height: 42px; font-size: 1.25rem; border-radius: 6px; }
+  .scoreboard { gap: 3px; }
+}
 .score-letter.struck { background: var(--struck); border-color: #7A2535; color: #8A4455; }
 .score-letter.struck::after {
   content: ''; position: absolute;
@@ -101,13 +105,13 @@ body {
   border-radius: 2px; animation: strikeIn 0.35s ease forwards;
 }
 @keyframes strikeIn { from { width: 0; left: 50%; } to { width: 120%; left: -10%; } }
-.lives-info { margin-top: 10px; font-size: 0.82rem; color: var(--text-soft); letter-spacing: 1px; }
-.lives-info span { color: var(--gold); font-weight: 700; }
+.lives-info { margin-top: 10px; font-size: 0.88rem; color: var(--text-soft); letter-spacing: 1px; }
+.lives-info span { color: var(--gold); font-weight: 700; font-size: 1rem; }
 
 /* BLANKS */
 .blank-section { margin: 22px 20px 0; max-width: 560px; width: 100%; text-align: center; }
-.blank-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
-.puzzle-tag { font-size: 0.82rem; color: var(--gold-dim); letter-spacing: 2px; margin-bottom: 14px; font-weight: 600; }
+.blank-label { font-size: 0.75rem; letter-spacing: 2px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 10px; }
+.puzzle-tag { font-size: 0.88rem; color: var(--gold-soft); letter-spacing: 2px; margin-bottom: 14px; font-weight: 700; }
 .words-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 12px 20px; }
 .word-block { display: flex; gap: 6px; align-items: flex-end; }
 .letter-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -120,11 +124,11 @@ body {
 .letter-box.just-revealed { animation: revealPop 0.4s ease; }
 @keyframes revealPop { 0%{transform:scale(0.4) translateY(10px);opacity:0} 65%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
 .letter-underline { width: 36px; height: 2px; background: var(--border-light); border-radius: 1px; }
-.word-slash { font-size: 2rem; color: var(--muted); padding-bottom: 8px; }
+.word-slash { font-size: 2rem; color: var(--text-soft); padding-bottom: 8px; }
 
 /* GUESSED */
 .guessed-section { margin: 14px 20px 0; max-width: 560px; width: 100%; }
-.guessed-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+.guessed-label { font-size: 0.75rem; letter-spacing: 2px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 8px; text-align: center; }
 .guessed-letters { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; min-height: 28px; }
 .guessed-badge {
   padding: 4px 11px; border-radius: 6px;
@@ -138,7 +142,7 @@ body {
 
 /* ALPHABET */
 .alphabet-section { margin: 18px 20px 0; max-width: 560px; width: 100%; }
-.alpha-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; text-align: center; }
+.alpha-label { font-size: 0.75rem; letter-spacing: 2px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 10px; text-align: center; }
 .alphabet-grid { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .alpha-btn {
   width: 37px; height: 37px; border-radius: 7px;
